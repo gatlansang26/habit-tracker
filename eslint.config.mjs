@@ -9,6 +9,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".worktrees/**", // agent worktrees nested in the repo
     "out/**",
     "build/**",
     "next-env.d.ts",
