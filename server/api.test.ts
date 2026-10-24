@@ -98,6 +98,18 @@ describe("habits API", () => {
     }
   });
 
+  it("404s for a numeric id too large to fit in a JS number", async () => {
+    const hugeId = "9".repeat(400);
+
+    const checkInRes = await CHECK_IN(new Request("http://test", { method: "POST" }), withId(hugeId));
+    expect(checkInRes.status).toBe(404);
+    expect(await checkInRes.json()).toHaveProperty("error");
+
+    const deleteRes = await DELETE(new Request("http://test", { method: "DELETE" }), withId(hugeId));
+    expect(deleteRes.status).toBe(404);
+    expect(await deleteRes.json()).toHaveProperty("error");
+  });
+
   it("deletes a habit, removing it from the list and its check-ins", async () => {
     const created = await (await postHabits({ name: "Temp" })).json();
 

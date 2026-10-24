@@ -6,7 +6,7 @@ const ID_PATTERN = /^\d+$/;
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!ID_PATTERN.test(id)) {
+  if (!ID_PATTERN.test(id) || !Number.isSafeInteger(Number(id))) {
     return NextResponse.json<ApiError>({ error: "Habit not found" }, { status: 404 });
   }
 
