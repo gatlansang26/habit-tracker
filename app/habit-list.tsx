@@ -27,7 +27,19 @@ export function HabitList() {
   }
 
   useEffect(() => {
-    api.list().then(setHabits);
+    api.list().then(setHabits).catch(showError);
+  }, []);
+
+  // Tab left open overnight keeps yesterday's "Done today"/streak; refresh
+  // once the tab becomes visible again so "today" doesn't go stale.
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        api.list().then(setHabits).catch(showError);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   async function refresh() {
