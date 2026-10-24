@@ -1,5 +1,4 @@
 import type { HabitsApi } from "@/contract";
-import { fakeApi } from "./fake";
+import { httpApi } from "./http";
 
-// Task 6 swaps this one line for a real HTTP implementation.
-export const api: HabitsApi = fakeApi;
+export const api: HabitsApi = httpApi;
