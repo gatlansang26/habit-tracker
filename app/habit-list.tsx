@@ -121,36 +121,43 @@ export function HabitList() {
         </p>
       )}
 
-      <ul className="flex flex-col gap-2">
-        {habits.map((habit) => {
-          const isPending = pendingIds.has(habit.id);
-          return (
-            <li
-              key={habit.id}
-              className="flex items-center justify-between gap-2 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
-            >
-              <span>{habit.name}</span>
-              <span>🔥 {habit.currentStreak} day streak</span>
-              <button
-                type="button"
-                onClick={() => handleCheckIn(habit.id)}
-                disabled={habit.checkedInToday || isPending}
-                className="rounded bg-foreground px-3 py-1 text-background disabled:opacity-50"
+      {habits.length === 0 ? (
+        <p>No habits yet.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {habits.map((habit) => {
+            const isPending = pendingIds.has(habit.id);
+            const checkInLabel = habit.checkedInToday ? "Done today" : "Check in";
+            return (
+              <li
+                key={habit.id}
+                className="flex items-center justify-between gap-2 rounded border border-zinc-200 px-3 py-2 dark:border-zinc-800"
               >
-                {habit.checkedInToday ? "Done today" : "Check in"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(habit.id)}
-                disabled={isPending}
-                className="rounded border border-zinc-300 px-3 py-1 disabled:opacity-50 dark:border-zinc-700"
-              >
-                Delete
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                <span>{habit.name}</span>
+                <span>🔥 {habit.currentStreak} day streak</span>
+                <button
+                  type="button"
+                  onClick={() => handleCheckIn(habit.id)}
+                  disabled={habit.checkedInToday || isPending}
+                  aria-label={`${checkInLabel} ${habit.name}`}
+                  className="rounded bg-foreground px-3 py-1 text-background disabled:opacity-50"
+                >
+                  {checkInLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(habit.id)}
+                  disabled={isPending}
+                  aria-label={`Delete ${habit.name}`}
+                  className="rounded border border-zinc-300 px-3 py-1 disabled:opacity-50 dark:border-zinc-700"
+                >
+                  Delete
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
