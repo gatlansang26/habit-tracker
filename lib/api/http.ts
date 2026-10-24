@@ -2,7 +2,9 @@ import type { ApiError, Habit, HabitsApi } from "@/contract";
 
 async function throwIfError(res: Response): Promise<void> {
   if (!res.ok) {
-    const body = (await res.json()) as ApiError;
+    const body: ApiError = await res.json().catch(() => ({
+      error: `Request failed (${res.status})`,
+    }));
     throw new Error(body.error);
   }
 }

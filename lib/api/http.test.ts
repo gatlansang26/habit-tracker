@@ -29,6 +29,16 @@ describe("httpApi", () => {
     await expect(httpApi.create("")).rejects.toThrow("Name must be 1-100 characters");
   });
 
+  it("throws a status-based message when a non-2xx response body isn't JSON", async () => {
+    const res = {
+      ok: false,
+      status: 500,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+    } as unknown as Response;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(res));
+    await expect(httpApi.list()).rejects.toThrow("Request failed (500)");
+  });
+
   it("remove resolves on 204 without reading a body", async () => {
     const res = mockResponse(true);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(res));
