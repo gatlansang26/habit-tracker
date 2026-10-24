@@ -35,4 +35,12 @@ describe("httpApi", () => {
     await expect(httpApi.remove(1)).resolves.toBeUndefined();
     expect(res.json).not.toHaveBeenCalled();
   });
+
+  it("checkIn posts to /api/habits/:id/check-ins and returns the Habit", async () => {
+    const habit = { id: 1, name: "Read", createdAt: "2026-01-01", currentStreak: 1, checkedInToday: true };
+    const fetchMock = vi.fn().mockResolvedValue(mockResponse(true, habit));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(httpApi.checkIn(1)).resolves.toEqual(habit);
+    expect(fetchMock).toHaveBeenCalledWith("/api/habits/1/check-ins", { method: "POST" });
+  });
 });

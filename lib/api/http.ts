@@ -1,10 +1,14 @@
 import type { ApiError, Habit, HabitsApi } from "@/contract";
 
-async function parse<T>(res: Response): Promise<T> {
+async function throwIfError(res: Response): Promise<void> {
   if (!res.ok) {
     const body = (await res.json()) as ApiError;
     throw new Error(body.error);
   }
+}
+
+async function parse<T>(res: Response): Promise<T> {
+  await throwIfError(res);
   return res.json() as Promise<T>;
 }
 
@@ -25,10 +29,7 @@ export const httpApi: HabitsApi = {
 
   async remove(id) {
     const res = await fetch(`/api/habits/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const body = (await res.json()) as ApiError;
-      throw new Error(body.error);
-    }
+    await throwIfError(res);
   },
 
   async checkIn(id) {
