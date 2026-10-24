@@ -28,7 +28,10 @@ export function getDb(): Promise<Db> {
     )`);
 
     return instance;
-  })();
+  })().catch((err) => {
+    dbPromise = undefined;
+    throw err;
+  });
 
   return dbPromise;
 }
