@@ -2,11 +2,22 @@ import { test, expect, type Page } from "@playwright/test";
 
 async function addHabit(page: Page, name: string) {
   await page.getByLabel("Habit name").fill(name);
-  await page.getByRole("button", { name: "Add" }).click();
+  // exact: true avoids matching row buttons whose aria-label now embeds the
+  // habit name (e.g. a habit named "Add habit ..." makes its own "Check in"
+  // button's accessible name contain "Add").
+  await page.getByRole("button", { name: "Add", exact: true }).click();
 }
 
 function rowFor(page: Page, name: string) {
   return page.getByRole("listitem").filter({ hasText: name });
+}
+
+// row.getByRole("button", { name }) now matches by accessible name, which
+// includes the habit name via aria-label; these fixtures' habit names echo
+// the action under test (e.g. "Check in ..."), so match on visible button
+// text instead to avoid matching the row's other button.
+function rowButton(row: ReturnType<typeof rowFor>, text: string) {
+  return row.getByRole("button").filter({ hasText: text });
 }
 
 test("add habit: appears with 0 day streak", async ({ page }) => {
@@ -24,9 +35,9 @@ test("check in: button becomes Done today and shows 1 day streak", async ({ page
   await addHabit(page, name);
   const row = rowFor(page, name);
 
-  await row.getByRole("button", { name: "Check in" }).click();
+  await rowButton(row, "Check in").click();
 
-  await expect(row.getByRole("button", { name: "Done today" })).toBeVisible();
+  await expect(rowButton(row, "Done today")).toBeVisible();
   await expect(row).toContainText("1 day streak");
 });
 
@@ -35,7 +46,7 @@ test("double check-in: repeat check-in stays at 1 day streak after reload", asyn
   await page.goto("/");
   await addHabit(page, name);
   const row = rowFor(page, name);
-  await row.getByRole("button", { name: "Check in" }).click();
+  await rowButton(row, "Check in").click();
   await expect(row).toContainText("1 day streak");
 
   const habits = await (await request.get("/api/habits")).json();
@@ -53,7 +64,7 @@ test("delete: row disappears and stays gone after reload", async ({ page }) => {
   await addHabit(page, name);
   const row = rowFor(page, name);
 
-  await row.getByRole("button", { name: "Delete" }).click();
+  await rowButton(row, "Delete").click();
 
   await expect(row).toHaveCount(0);
   await page.reload();
@@ -68,4 +79,19 @@ test("blank name: shows an alert and adds no row", async ({ page }) => {
 
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByRole("listitem")).toHaveCount(rowCountBefore);
+});
+
+test("first-load failure: shows an alert when the habits list fails to load", async ({ page }) => {
+  await page.route("**/api/habits", (route) => {
+    if (route.request().method() === "GET") {
+      route.fulfill({ status: 500, json: { error: "Internal server error" } });
+    } else {
+      route.continue();
+    }
+  });
+
+  await page.goto("/");
+
+  // filter out Next's own hidden route-announcer, which also has role="alert"
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toBeVisible();
 });
