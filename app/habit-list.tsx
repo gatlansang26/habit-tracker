@@ -10,9 +10,21 @@ export function HabitList() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [pending, setPending] = useState<{ id: number; action: "checkIn" | "delete" } | null>(
-    null,
-  );
+  // Which habit ids have a request in flight, tracked per id so one habit's
+  // pending check-in/delete doesn't re-enable another habit's buttons.
+  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
+
+  function startPending(id: number) {
+    setPendingIds((prev) => new Set(prev).add(id));
+  }
+
+  function stopPending(id: number) {
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     api.list().then(setHabits);
@@ -43,27 +55,27 @@ export function HabitList() {
 
   async function handleCheckIn(id: number) {
     setError(null);
-    setPending({ id, action: "checkIn" });
+    startPending(id);
     try {
       await api.checkIn(id);
       await refresh();
     } catch (err) {
       showError(err);
     } finally {
-      setPending(null);
+      stopPending(id);
     }
   }
 
   async function handleDelete(id: number) {
     setError(null);
-    setPending({ id, action: "delete" });
+    startPending(id);
     try {
       await api.remove(id);
       await refresh();
     } catch (err) {
       showError(err);
     } finally {
-      setPending(null);
+      stopPending(id);
     }
   }
 
@@ -99,7 +111,7 @@ export function HabitList() {
 
       <ul className="flex flex-col gap-2">
         {habits.map((habit) => {
-          const isPending = pending?.id === habit.id;
+          const isPending = pendingIds.has(habit.id);
           return (
             <li
               key={habit.id}
@@ -110,7 +122,7 @@ export function HabitList() {
               <button
                 type="button"
                 onClick={() => handleCheckIn(habit.id)}
-                disabled={habit.checkedInToday || (isPending && pending.action === "checkIn")}
+                disabled={habit.checkedInToday || isPending}
                 className="rounded bg-foreground px-3 py-1 text-background disabled:opacity-50"
               >
                 {habit.checkedInToday ? "Done today" : "Check in"}
@@ -118,7 +130,7 @@ export function HabitList() {
               <button
                 type="button"
                 onClick={() => handleDelete(habit.id)}
-                disabled={isPending && pending.action === "delete"}
+                disabled={isPending}
                 className="rounded border border-zinc-300 px-3 py-1 disabled:opacity-50 dark:border-zinc-700"
               >
                 Delete

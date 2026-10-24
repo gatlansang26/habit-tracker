@@ -15,7 +15,8 @@ function todayStr(): string {
 
 export const fakeApi: HabitsApi = {
   async list() {
-    return habits;
+    // Copy so callers (and React's reference-equality check) never see the live store.
+    return habits.map((h) => ({ ...h }));
   },
 
   async create(name) {
@@ -30,8 +31,8 @@ export const fakeApi: HabitsApi = {
       currentStreak: 0,
       checkedInToday: false,
     };
-    habits.push(habit);
-    return habit;
+    habits = [...habits, habit];
+    return { ...habit };
   },
 
   async remove(id) {
@@ -43,13 +44,13 @@ export const fakeApi: HabitsApi = {
   },
 
   async checkIn(id) {
-    const habit = habits.find((h) => h.id === id);
-    if (!habit) {
+    const index = habits.findIndex((h) => h.id === id);
+    if (index === -1) {
       throw new Error("Habit not found");
     }
     // Repeat check-in is a no-op: streak and flag just stay at their checked-in values.
-    habit.checkedInToday = true;
-    habit.currentStreak = 1;
-    return habit;
+    const updated: Habit = { ...habits[index], checkedInToday: true, currentStreak: 1 };
+    habits = habits.map((h, i) => (i === index ? updated : h));
+    return { ...updated };
   },
 };

@@ -35,4 +35,19 @@ describe("fakeApi", () => {
     await fakeApi.remove(habit.id);
     await expect(fakeApi.checkIn(habit.id)).rejects.toThrow();
   });
+
+  it("list returns a fresh copy each call, so mutating a result doesn't change the store", async () => {
+    const habit = await fakeApi.create("Immutable");
+    const first = await fakeApi.list();
+    const second = await fakeApi.list();
+    expect(first).not.toBe(second);
+
+    const returned = first.find((h) => h.id === habit.id);
+    expect(returned).not.toBe(habit);
+    if (returned) {
+      returned.name = "Mutated";
+    }
+    const stored = (await fakeApi.list()).find((h) => h.id === habit.id);
+    expect(stored?.name).toBe("Immutable");
+  });
 });
